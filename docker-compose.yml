@@ -1,18 +1,47 @@
-version: '3.8'
 services:
-  app:
-    build: ./app
-    container_name: riches-flask
-    expose:
-      - "5000"
+  flask:
+    build: ./flask
+    container_name: day-nginx-flask-1
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://riches:richespass@db:5432/richesdb
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qo", " http://localhost:5000"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "5000:5000"
 
   nginx:
     image: nginx:alpine
-    container_name: riches-nginx
+    container_name: day2-nginx-nginx-1
+    restart: unless-stopped
     ports:
       - "8080:80"
+    depends_on:
+      - flask
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./logs:/var/log/nginx
-    depends_on:
-      - app
+
+  db:
+    image: postgres:16-alpine
+    container_name: day2-nginx-db-1
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: riches
+      POSTGRES_PASSWORD: richespass
+      POSTGRES_DB: richesdb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U riches"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres_data:
