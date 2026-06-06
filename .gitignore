@@ -8,3 +8,7 @@ logs/
 .env
 .vscode/
 .idea/
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
